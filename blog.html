@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIU Forum</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="blog.css">
+    <link rel="icon" type="image/x-icon" href="assets/diu-logo.png">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand-card">
+                <div class="nav-brand">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>DIU Forum</span>
+                </div>
+            </div>
+            <div class="nav-menu-card">
+                <div class="nav-menu">
+                    <ul class="nav-links">
+                        <li class="nav-item"><a class="active" href="blog.html">Feeds</a></li>
+                        <li class="nav-item"><a href="jobs.html">Jobs</a></li>
+                        <li class="nav-item"><a href="studies.html">H. Studies</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="user-menu-card">
+                <div class="user-menu">
+                    <div class="user-profile" onclick="toggleDropdown()">
+                        <span id="userName">Guest User</span>
+                        <img id="navUserAvatarImg" class="user-avatar-img" alt="User" />
+                        <i id="navUserIcon" class="fas fa-user-circle user-icon"></i>
+                    </div>
+                    <div class="dropdown" id="userDropdown">
+                        <div id="dropdownLogin">
+                            <a href="#" class="sign-in-btn"><i class="fas fa-sign-in-alt"></i> Login</a>
+                        </div>
+                        <div id="dropdownLogout" class="hidden">
+                            <a href="#" class="sign-out-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                        <a href="settings.html"><i class="fas fa-cog"></i>Settings</a>
+                        <a href="help.html"><i class="fa-solid fa-circle-question"></i>Help</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="blog-layout">
+        <!-- Left Sidebar -->
+        <aside class="left-sidebar">
+            <!-- User Profile Card -->
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="userAvatar"
+                        style="position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                        <img id="userAvatarImg" alt="Profile"
+                            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" />
+                        <span id="userAvatarLetter">U</span>
+                    </div>
+                    <div class="profile-info">
+                        <h3 id="profileName">User Name</h3>
+                        <p id="profileType">Student</p>
+                        <p id="profileDepartment">Computer Science</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="quick-links-card">
+                <h4>Quick Links</h4>
+                <ul class="quick-links">
+                    <li><a href="https://skill.jobs/browse-jobs"><i class="fas fa-briefcase"></i>Skill Jobs</a></li>
+                    <li><a href="https://daffodilvarsity.edu.bd/"><i class="fas fa-graduation-cap"></i>DIU Official Site</a></li>
+                    <li><a href="https://daffodilvarsity.edu.bd/noticeboard"><i class="fas fa-calendar"></i>DIU Notice Board</a></li>
+                    <li><a href="https://studentportal.diu.edu.bd/"><i class="fas fa-users"></i>Student Portal</a></li>
+                    <li><a href="https://teacherportal.diu.edu.bd/"><i class="fa-solid fa-chalkboard-user"></i>Teacher Portal</a></li>
+                    <li><a href="https://pd.daffodilvarsity.edu.bd/support_ticket"><i class="fa-solid fa-ticket"></i>DIU Support Ticket</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Create Post Section -->
+            <div class="create-post-card">
+                <div class="create-post-header">
+                    <div class="user-avatar-small" id="createPostAvatar">U</div>
+                    <button class="create-post-btn" id="newPostBtn">
+                        <span>What's on your mind?</span>
+                    </button>
+                </div>
+                <div class="create-post-actions">
+                    <button class="action-item" id="newPostBtn2">
+                        <i class="fas fa-edit"></i>
+                        <span>Write Post</span>
+                    </button>
+                    <button class="action-item">
+                        <i class="fas fa-image"></i>
+                        <span>Photo</span>
+                    </button>
+                    <button class="action-item">
+                        <i class="fas fa-video"></i>
+                        <span>Video</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Posts Feed -->
+            <div class="posts-feed" id="postsContainer">
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading posts...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Post Card Template (used by posts.js) -->
+        <template id="postTemplate">
+            <article class="post-card">
+                <div class="post-header">
+                    <div class="author-info">
+                        <div class="author-avatar" data-author-avatar>U</div>
+                        <div class="author-details">
+                            <div class="author-name">
+                                <span data-author-name></span><span class="author-meta" data-author-meta
+                                    style="display:none;"></span>
+                            </div>
+                            <div class="post-time" data-post-time></div>
+                        </div>
+                    </div>
+                </div>
+                <h4 class="post-title" data-post-heading style="display:none;"></h4>
+                <div class="post-content" data-post-content></div>
+                <div class="post-attachments" data-post-attachments style="display:none;"></div>
+                <div class="post-contacts" data-post-contacts style="display:none;"></div>
+                <div class="post-footer">
+                    <button class="contact-btn" data-contact-btn style="display:none;">
+                        <i class="fas fa-address-book"></i>
+                        <span>Contact</span>
+                    </button>
+                </div>
+            </article>
+        </template>
+
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <!-- Trending Topics -->
+            <div class="trending-card">
+                <h4>Trending Topics</h4>
+                <div class="trending-list">
+                    <div class="trending-item">
+                        <span class="trending-tag">#WebDevelopment</span>
+                        <small>245 posts</small>
+                    </div>
+                    <div class="trending-item">
+                        <span class="trending-tag">#CareerTips</span>
+                        <small>189 posts</small>
+                    </div>
+                    <div class="trending-item">
+                        <span class="trending-tag">#DIUEvents</span>
+                        <small>156 posts</small>
+                    </div>
+                    <div class="trending-item">
+                        <span class="trending-tag">#Internships</span>
+                        <small>134 posts</small>
+                    </div>
+                    <div class="trending-item">
+                        <span class="trending-tag">#StudyAbroad</span>
+                        <small>98 posts</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Events -->
+            <div class="events-card">
+                <h4>Upcoming Events</h4>
+                <div class="events-list">
+                    <div class="event-item">
+                        <div class="event-date">
+                            <span class="day">15</span>
+                            <span class="month">Aug</span>
+                        </div>
+                        <div class="event-info">
+                            <h5>Tech Talk: AI in Education</h5>
+                            <p>2:00 PM - Auditorium</p>
+                        </div>
+                    </div>
+                    <div class="event-item">
+                        <div class="event-date">
+                            <span class="day">10</span>
+                            <span class="month">Oct</span>
+                        </div>
+                        <div class="event-info">
+                            <h5>Career Fair 2025</h5>
+                            <p>10:00 AM - Main Campus</p>
+                        </div>
+                    </div>
+                    <div class="event-item">
+                        <div class="event-date">
+                            <span class="day">24</span>
+                            <span class="month">Aug</span>
+                        </div>
+                        <div class="event-info">
+                            <h5>Final Exam: Summer 2025</h5>
+                            <p>9:00 AM - Web Engineering</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Links -->
+            <div class="footer-links">
+                <div class="links-section">
+                    <a href="#">About</a>
+                    <a href="#">Privacy</a>
+                    <a href="#">Terms</a>
+                    <a href="#">Help</a>
+                </div>
+                <p>&copy; 2025 DIU Forum</p>
+            </div>
+        </aside>
+    </div>
+    <!-- Post Creation Modal -->
+    <div id="postModal" class="modal-overlay">
+        <div class="post-modal-card">
+            <h3 class="modal-title">Create Post</h3>
+            <div id="postUserInfo" class="post-modal-userinfo">Signed in as <span id="postAuthorName"></span></div>
+            <div class="post-modal-body">
+                <div class="form-field">
+                    <label for="postHeading">Heading<span class="required"> *</span></label>
+                    <input id="postHeading" class="pm-input" type="text" maxlength="120" placeholder="Concise, descriptive title" />
+                </div>
+                <div class="form-field">
+                    <label for="postContent">Main Post<span class="required"> *</span></label>
+                    <textarea id="postContent" class="pm-textarea" rows="6" placeholder="Share something with the community..."></textarea>
+                </div>
+                <div class="post-modal-attachments">
+                    <div class="attachment-actions">
+                        <button id="addPhotoBtn" class="pm-attach-btn">
+                            <i class="fas fa-image"></i> Photo(s)
+                        </button>
+                        <button id="addVideoBtn" class="pm-attach-btn">
+                            <i class="fas fa-video"></i> Video(s)
+                        </button>
+                        <span class="pm-note">(Preview & uploads coming soon)</span>
+                    </div>
+                    <input id="postImages" type="file" accept="image/*" multiple class="hidden-input" />
+                    <input id="postVideos" type="file" accept="video/*" multiple class="hidden-input" />
+                    <div id="attachmentList" class="attachment-list"></div>
+                </div>
+                <!-- Contacts Section -->
+                <div class="form-field">
+                    <label for="contactEmail">Contact Email</label>
+                    <input id="contactEmail" class="pm-input" type="email" placeholder="you@example.com" readonly />
+                    <div class="pm-note">This email will be shown on your post so others can reach you.</div>
+                </div>
+                <div class="form-field">
+                    <label for="contactOther">Other Contact (optional)</label>
+                    <input id="contactOther" class="pm-input" type="text" maxlength="160" placeholder="Phone number, Telegram link, Facebook, LinkedIn, etc." />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelPostBtn" class="pm-btn pm-btn-secondary">Cancel</button>
+                <button id="submitPostBtn" class="pm-btn pm-btn-primary">Post</button>
+            </div>
+            <div id="postError" class="post-error"></div>
+            <div id="profileIncompleteMsg" class="profile-incomplete">
+                Complete your profile (Display Name, Role, Department, Institution) in <a href="settings.html" class="link-accent">Settings</a> to post.
+            </div>
+        </div>
+    </div>
+    <!-- Contact Info Modal -->
+    <div id="contactModal" class="modal-overlay">
+        <div class="post-modal-card contact-card">
+            <h3 class="modal-title">Contact Info</h3>
+            <div id="contactDetails" class="post-contacts" style="margin-top:8px;"></div>
+            <div class="modal-actions">
+                <button id="closeContactBtn" class="pm-btn pm-btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="posts.js"></script>
+</body>
+
+</html>
