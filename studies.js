@@ -9,7 +9,8 @@ let editingStudyId = null;
 
 function getLocalUserInfo() {
     try {
-        const raw = localStorage.getItem('user_info');
+        const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+        const raw = getter('user_info');
         return raw ? JSON.parse(raw) : null;
     } catch (_) {
         return null;
@@ -124,10 +125,13 @@ async function loadCurrentUser() {
 
 async function hydrateSavedOpportunities() {
     try {
-        const localSaved = JSON.parse(localStorage.getItem('saved_studies') || '[]');
+        const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+        const raw = getter('saved_studies') || '[]';
+        const localSaved = JSON.parse(raw);
         localSaved.forEach(id => savedOpportunityIds.add(String(id)));
     } catch (_) {
-        localStorage.removeItem('saved_studies');
+        const remover = window?.safeLocal?.removeItem || (k => { try { localStorage.removeItem(k); } catch (_) {} });
+        remover('saved_studies');
     }
 
     if (!window.supabaseClient) return;
@@ -148,7 +152,10 @@ async function hydrateSavedOpportunities() {
 }
 
 function persistSavedOpportunities() {
-    localStorage.setItem('saved_studies', JSON.stringify(Array.from(savedOpportunityIds)));
+    try {
+        const setter = window?.safeLocal?.setItem || ((k, v) => { try { localStorage.setItem(k, v); } catch (_) {} });
+        setter('saved_studies', JSON.stringify(Array.from(savedOpportunityIds)));
+    } catch (_) {}
 }
 
 async function loadOpportunities() {
@@ -274,7 +281,7 @@ function displayOpportunities(opportunities) {
                         <div class="job-menu-dropdown" id="study-menu-${index}" data-opportunity-id="${id}">
                             <button type="button" onclick="shareStudy('${id}')">Share</button>
                             ${isOwner ? `<button type="button" onclick="editStudy('${id}')">Edit</button>` : ''}
-                            ${isOwner ? `<button type="button" class="danger" onclick="deleteStudy('${id}')">Delete</button>` : ''}
+                            ${isOwner ? `<button type="button" class="danger" onclick="deleteStudy('${id}')">Delete</button>` : `<button type="button" onclick="reportStudy('${id}')">Report</button>`}
                         </div>
                     </div>
                 </div>
@@ -379,6 +386,56 @@ async function deleteStudy(id) {
     } catch (err) {
         console.error('deleteStudy failed', err);
         alert('Could not delete this opportunity.');
+    }
+}
+
+async function reportStudy(id) {
+    closeAllStudyMenus();
+    const reason = prompt('Please describe why you are reporting this study opportunity:');
+    if (!reason || !reason.trim()) return;
+    
+    try {
+        const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+        let userInfo = null;
+        try {
+            const stored = getter('user_info');
+            userInfo = stored ? JSON.parse(stored) : null;
+        } catch (_) { userInfo = null; }
+        
+        if (!window.supabaseClient) {
+            alert('Unable to submit report. Please try again later.');
+            return;
+        }
+        
+        let reporterId = null;
+        try {
+            const session = await window.supabaseClient.auth.getSession();
+            const user = session?.data?.session?.user;
+            if (user?.id) {
+                const { data: profile } = await window.supabaseClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('auth_id', user.id)
+                    .maybeSingle();
+                reporterId = profile?.id || null;
+            }
+        } catch (_) {}
+        
+        const { error } = await window.supabaseClient
+            .from('reports')
+            .insert({
+                item_id: id,
+                item_type: 'study',
+                reason: reason.trim(),
+                reporter_id: reporterId,
+                reporter_email: userInfo?.email || null
+            });
+        
+        if (error) throw error;
+        alert('Report submitted successfully. Thank you for helping keep our community safe.');
+    } catch (err) {
+        console.error('[Studies] Failed to submit report', err);
+        alert('Failed to submit report. Please try again.');
     }
 }
 
@@ -548,7 +605,7 @@ function refreshSaveButtons() {
 }
 
 async function ensureProfileExists() {
-    if (!window.supabaseClient || !currentUser) return null;
+    if (!window.supabaseClient || !currentUser || !currentUser.id) return null;
     const userId = currentUser.id;
     const lowerEmail = (currentUser.email || '').toLowerCase() || null;
     try {
@@ -604,7 +661,7 @@ async function resolveStudyProfileId() {
 }
 
 async function getCurrentProfileId() {
-    if (!currentUser) return null;
+    if (!currentUser || !currentUser.id) return null;
     try {
         const { data, error } = await window.supabaseClient
             .from('profiles')
@@ -717,9 +774,9 @@ function wireUI() {
         e.preventDefault();
         e.stopPropagation();
         // Mirror Jobs modal gating: require signed-in DIU account before opening
-        const stored = localStorage.getItem('user_info');
+        const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
         let userInfo = null;
-        try { userInfo = stored ? JSON.parse(stored) : null; } catch (_) { userInfo = null; }
+        try { const stored = getter('user_info'); userInfo = stored ? JSON.parse(stored) : null; } catch (_) { userInfo = null; }
         const email = (userInfo?.email || '').toLowerCase();
         const hasDiuEmail = email.endsWith('@diu.edu.bd');
         if (!userInfo || !hasDiuEmail) {

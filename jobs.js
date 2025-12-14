@@ -10,7 +10,8 @@ let currentProfileId = null;
 window.addEventListener('load', async () => {
     console.log('[Jobs] Page loaded, initializing...');
     try {
-        const stored = localStorage.getItem('user_info');
+        const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+        const stored = getter('user_info');
         currentUser = stored ? JSON.parse(stored) : null;
     } catch (_) {}
     await hydrateSavedJobs();
@@ -131,7 +132,7 @@ function displayJobs(jobs) {
                         <div class="job-menu-dropdown" id="job-menu-${index}" data-job-id="${job.id}">
                             <button type="button" onclick="shareJob('${job.id}')">Share</button>
                             ${isOwner ? `<button type="button" onclick="editJob('${job.id}')">Edit</button>` : ''}
-                            ${isOwner ? `<button type="button" class="danger" onclick="deleteJob('${job.id}')">Delete</button>` : ''}
+                            ${isOwner ? `<button type="button" class="danger" onclick="deleteJob('${job.id}')">Delete</button>` : `<button type="button" onclick="reportJob('${job.id}')">Report</button>`}
                         </div>
                     </div>
                 </div>
@@ -221,9 +222,12 @@ function wireUI() {
         postJobBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const stored = localStorage.getItem('user_info');
-            let userInfo = null;
-            try { userInfo = stored ? JSON.parse(stored) : null; } catch (_) { userInfo = null; }
+            try {
+                const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+                const stored = getter('user_info');
+                var userInfo = null;
+                try { userInfo = stored ? JSON.parse(stored) : null; } catch (_) { userInfo = null; }
+            } catch (_) { var userInfo = null; }
             const email = userInfo?.email || '';
             const hasDiuEmail = email.toLowerCase().endsWith('@diu.edu.bd');
             if (!userInfo || !hasDiuEmail) {
@@ -249,8 +253,11 @@ function wireUI() {
         jobForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             try {
-                const stored = localStorage.getItem('user_info');
-                currentUser = stored ? JSON.parse(stored) : currentUser;
+                try {
+                    const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+                    const stored = getter('user_info');
+                    currentUser = stored ? JSON.parse(stored) : currentUser;
+                } catch (err) { currentUser = currentUser || null; }
             } catch (err) { currentUser = currentUser || null; }
             if (!currentUser && window.supabaseClient) {
                 try {
@@ -369,6 +376,55 @@ function toggleJobMenu(index) {
 
 function closeAllJobMenus() {
     document.querySelectorAll('.job-menu-dropdown').forEach(menu => menu.classList.remove('open'));
+}
+
+async function reportJob(jobId) {
+    closeAllJobMenus();
+    const reason = prompt('Please describe why you are reporting this job listing:');
+    if (!reason || !reason.trim()) return;
+    
+    try {
+        try {
+            const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+            const stored = getter('user_info');
+            var userInfo = stored ? JSON.parse(stored) : null;
+        } catch (_) { var userInfo = null; }
+        
+        if (!window.supabaseClient) {
+            alert('Unable to submit report. Please try again later.');
+            return;
+        }
+        
+        let reporterId = null;
+        try {
+            const session = await window.supabaseClient.auth.getSession();
+            const user = session?.data?.session?.user;
+            if (user?.id) {
+                const { data: profile } = await window.supabaseClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('auth_id', user.id)
+                    .maybeSingle();
+                reporterId = profile?.id || null;
+            }
+        } catch (_) {}
+        
+        const { error } = await window.supabaseClient
+            .from('reports')
+            .insert({
+                item_id: jobId,
+                item_type: 'job',
+                reason: reason.trim(),
+                reporter_id: reporterId,
+                reporter_email: userInfo?.email || null
+            });
+        
+        if (error) throw error;
+        alert('Report submitted successfully. Thank you for helping keep our community safe.');
+    } catch (err) {
+        console.error('[Jobs] Failed to submit report', err);
+        alert('Failed to submit report. Please try again.');
+    }
 }
 
 function subscribeToProfileUpdates() {
@@ -640,7 +696,8 @@ function closeJobDetails() {
 
 async function hydrateSavedJobs() {
     try {
-        const raw = localStorage.getItem('saved_jobs');
+        const getter = window?.safeLocal?.getItem || (k => { try { return localStorage.getItem(k); } catch (_) { return null; } });
+        const raw = getter('saved_jobs');
         const arr = raw ? JSON.parse(raw) : [];
         savedJobIds = new Set((arr || []).map(id => String(id)));
     } catch (_) {
@@ -667,7 +724,8 @@ async function hydrateSavedJobs() {
 
 function persistSavedJobs() {
     try {
-        localStorage.setItem('saved_jobs', JSON.stringify(Array.from(savedJobIds)));
+        const setter = window?.safeLocal?.setItem || ((k, v) => { try { localStorage.setItem(k, v); } catch (_) {} });
+        setter('saved_jobs', JSON.stringify(Array.from(savedJobIds)));
     } catch (_) {}
 }
 
